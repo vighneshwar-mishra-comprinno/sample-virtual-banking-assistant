@@ -1,0 +1,7 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+websockets==12.0
+requests==2.32.3
+boto3==1.36.26
+httpx>=0.28.1
+# Removed pipecat-ai and onnxruntime as we're using a simpler approach with Claude + Polly

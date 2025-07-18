@@ -12,7 +12,7 @@
 **********************************************************************************************************************/
 
 /**
- * AWS Configuration
+ * AWS Configuration for AI Astrologer with Nova Sonic
  * 
  * This module exports configuration settings for AWS services used by the application.
  * Values are populated during deployment from CloudFormation outputs.
@@ -32,10 +32,10 @@
 export const awsConfig = {
     Auth: {
         Cognito: {
-            userPoolClientId: '3f7bapxxxxxxxxxxxxx34u4eh',
-            userPoolId: 'ap-south-1_xxxxxxxx',
-            identityPoolId: 'ap-south-1:1111111-aaaa-bbbb-cccc-23hsjfk33412',
-            region: 'ap-south-1'
+            userPoolClientId: '3cges9l6tndtdrvougjoqm5r8u',
+            userPoolId: 'us-east-1_EIM8Flata',
+            identityPoolId: 'us-east-1:262d1551-cdc5-4c02-8028-4810360a2bbe',
+            region: 'us-east-1'
         }
     }
 }
@@ -49,12 +49,12 @@ export const awsConfig = {
 export const apiKey = "Your-own-long-secret-text-to-access-the-api"
 
 /**
- * WebSocket endpoint URL
+ * WebSocket endpoint URL - Using HTTP WebSocket for development with correct Load Balancer DNS
  * 
  * @constant
  * @type {string}
  */
-export const apiUrl = "wss://vba.example.acme/ws"
+export const apiUrl = "ws://Virtua-Virtu-GrFnAXxZKoUs-55b2890dc973f850.elb.us-east-1.amazonaws.com/ws"
 
 /**
  * Avatar .glb model filename

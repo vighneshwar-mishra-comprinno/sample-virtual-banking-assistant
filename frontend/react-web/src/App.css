@@ -1,9 +1,28 @@
+/* Reset and base styles */
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
 .app {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     height: 100vh;
     max-height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+.header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(248, 249, 250, 0.9) !important;
+    backdrop-filter: blur(10px);
 }
 
 .nav-strip {
@@ -11,11 +30,17 @@
 }
 
 .container {
-    height: 100%;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    max-width: none;
 }
 
 .avatar-container {
     height: 100%;
+    width: 100%;
 }
 
 .loading {
@@ -28,4 +53,14 @@
     align-items: center;
     justify-content: center;
     cursor: not-allowed;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    z-index: 2000;
+}
+
+/* Ensure Three.js canvas takes full space */
+canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
 }

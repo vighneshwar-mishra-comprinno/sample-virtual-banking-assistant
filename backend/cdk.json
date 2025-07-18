@@ -84,21 +84,20 @@
         "@aws-cdk/aws-lambda:createNewPoliciesWithAddToRolePolicy": true,
         "@aws-cdk/aws-s3:setUniqueReplicationRoleName": true,
         "vpc-config": {
-            "vpcId": "vpc-07fd1a1134fdbb7b2",
-            "cidr": "172.31.0.0/16",
+            "vpcId": "vpc-0c83c5f73531be6ba",
+            "cidr": "10.25.0.0/16",
             "publicSubnetIds": [
-                "subnet-061f36518d2216acf",
-                "subnet-0f8e2d0d15f67acbe"
+                "subnet-0107a04d93545fb9f",
+                "subnet-0b1ad22d23f52acfd"
             ],
             "privateSubnetIds": [
-                "subnet-080eb3dea28bdb779",
-                "subnet-09582fa2ff3d4e40b"
+                "subnet-076380a80c3117a56",
+                "subnet-0409505ae85e0ae1b"
             ],
             "availabilityZones": [
-                "ap-south-1a",
-                "ap-south-1b"
+                "us-east-1a",
+                "us-east-1b"
             ]
-        },
-        "certificate-arn": "arn:aws:acm:ap-south-1:135808935748:certificate/df6fa0ec-8b8f-4178-92c4-166fdd2774df"
+        }
     }
 }

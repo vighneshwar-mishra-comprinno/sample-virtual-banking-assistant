@@ -14,7 +14,7 @@
 /**
  * Main Application Component
  * 
- * This is the root component of the Virtual Banking Assistant application.
+ * This is the root component of the Astro consultant application.
  * It handles user authentication through AWS Cognito and renders the main
  * content when authenticated.
  */
@@ -33,10 +33,10 @@ function App() {
             return (
                 <div className='d-flex flex-column justify-content-center text-center'>
                     <p className='h1'>
-                        Virtual Banking Assistant
+                        Sophia - AI Astrologer
                     </p>
                     <p className='h5 mb-5 text-secondary'>
-                        Powered by Amazon Nova Sonic
+                        Personalized Astrology Guidance • Powered by Amazon Nova Sonic
                     </p>
                 </div>
             );
@@ -46,7 +46,7 @@ function App() {
     return (
         <div className='app'>
             <Authenticator
-                loginMechanisms={['email']}  // Only allow email-based login
+                loginMechanisms={['username']}  // Use username-based login
                 components={components}      // Use custom components
                 hideSignUp                   // Disable self-service sign up
             >
