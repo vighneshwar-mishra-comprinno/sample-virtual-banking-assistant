@@ -94,134 +94,50 @@ def update_dredentials():
     except Exception as e:
         print(f"Error refreshing credentials: {str(e)}", flush=True)
 
-import boto3
-from datetime import datetime
-
-async def get_astrology_guidance(params: FunctionCallParams):
-    """
-    Get astrological guidance using OpenSearch knowledge base for money and health topics.
-    """
-    try:
-        # Extract parameters
-        birth_date = params.arguments.get("birth_date", "")
-        birth_time = params.arguments.get("birth_time", "")
-        birth_place = params.arguments.get("birth_place", "")
-        query = params.arguments.get("query", "")
-        topic = params.arguments.get("topic", "").lower()
-        
-        # Validate required parameters
-        if not all([birth_date, birth_time, birth_place, query]):
-            await params.result_callback({
-                "message": "I need your complete birth details (date, time, place) and your specific question to provide accurate astrological guidance.",
-                "missing_info": True
-            })
-            return
-        
-        # Initialize OpenSearch client for knowledge base
-        try:
-            opensearch_client = boto3.client('opensearchserverless', region_name='us-east-1')
-            bedrock_agent = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
-            
-            # Query the knowledge base for astrology information
-            knowledge_base_id = "G7IBKVWH1Q"
-            
-            # Construct query for knowledge base
-            kb_query = f"Astrological guidance for {topic} born on {birth_date} at {birth_time} in {birth_place}. Question: {query}"
-            
-            # Query the knowledge base
-            response = bedrock_agent.retrieve_and_generate(
-                input={
-                    'text': kb_query
-                },
-                retrieveAndGenerateConfiguration={
-                    'type': 'KNOWLEDGE_BASE',
-                    'knowledgeBaseConfiguration': {
-                        'knowledgeBaseId': knowledge_base_id,
-                        'modelArn': 'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0'
-                    }
+async def get_balance_from_api(params: FunctionCallParams):
+    if params.arguments["username"] == 'suresh':
+        if params.arguments["secret_passcode"].lower() == 'nova sonic is awesome' or params.arguments["secret_passcode"].lower() == 'novasonic is awesome':
+            await params.result_callback(
+                {
+                    "balance": 5000 if params.arguments["account_type"] == 'savings' else 14000
                 }
             )
-            
-            # Extract the generated response
-            kb_response = response.get('output', {}).get('text', '')
-            
-            if kb_response:
-                await params.result_callback({
-                    "astrological_guidance": kb_response,
-                    "birth_details": {
-                        "date": birth_date,
-                        "time": birth_time,
-                        "place": birth_place
-                    },
-                    "topic": topic,
-                    "source": "Astrological Knowledge Base"
-                })
-            else:
-                # Fallback response if knowledge base doesn't return results
-                await params.result_callback({
-                    "astrological_guidance": f"Based on your birth details ({birth_date}, {birth_time}, {birth_place}), I can provide guidance on {topic}. However, I need to access more specific astrological calculations from my knowledge base. Please try rephrasing your question about {topic}.",
-                    "birth_details": {
-                        "date": birth_date,
-                        "time": birth_time,
-                        "place": birth_place
-                    },
-                    "topic": topic,
-                    "source": "General Astrology"
-                })
-                
-        except Exception as e:
-            print(f"Knowledge base error: {str(e)}")
-            # Fallback to basic astrological response
-            await params.result_callback({
-                "astrological_guidance": f"Based on your birth details from {birth_place} on {birth_date} at {birth_time}, I can provide some insights about {topic}. For more precise calculations, I recommend consulting detailed astrological charts.",
-                "birth_details": {
-                    "date": birth_date,
-                    "time": birth_time,
-                    "place": birth_place
-                },
-                "topic": topic,
-                "source": "Basic Astrology",
-                "note": "Knowledge base temporarily unavailable"
-            })
-            
-    except Exception as e:
-        print(f"Function error: {str(e)}")
-        await params.result_callback({
-            "message": "I'm having trouble processing your astrological request. Please provide your birth date, time, place, and specific question about money or health.",
-            "error": True
-        })
+        else:
+            print('INCORRECT PASSCODE !')
+            await params.result_callback(
+                {
+                    "message": "Incorrect passcode."
+                }
+            )
+    else:
+        await params.result_callback(
+            {
+                "message": "No such user found."
+            }
+        )
 
-astrology_function = FunctionSchema(
-    name="get_astrology_guidance",
-    description="Get astrological guidance for money and health topics using birth details and knowledge base calculations.",
+weather_function = FunctionSchema(
+    name="get_balance",
+    description="Get an account balance.",
     properties={
-        "birth_date": {
+        "username": {
             "type": "string",
-            "description": "Date of birth in DD/MM/YYYY format.",
+            "description": "The username for which the account balance is to be fetched.",
         },
-        "birth_time": {
+        "secret_passcode": {
             "type": "string",
-            "description": "Time of birth in HH:MM AM/PM format.",
+            "description": "A sentence to be used as the secret passcode to access the account details.",
         },
-        "birth_place": {
+        "account_type": {
             "type": "string",
-            "description": "Place of birth (City, Country).",
-        },
-        "query": {
-            "type": "string",
-            "description": "The specific question or issue the person is facing.",
-        },
-        "topic": {
-            "type": "string",
-            "description": "The main topic category: 'money', 'health', 'career', or 'relationships'.",
-            "enum": ["money", "health", "career", "relationships"]
+            "description": "The type of the account. Either savings or fixed deposit.",
         }
     },
-    required=["birth_date", "birth_time", "birth_place", "query", "topic"],
+    required=["username", "account_type"],
 )
 
 # Create tools schema
-tools = ToolsSchema(standard_tools=[astrology_function])
+tools = ToolsSchema(standard_tools=[weather_function])
 
 async def setup(websocket: WebSocket):
     """
@@ -268,7 +184,7 @@ async def setup(websocket: WebSocket):
     )
 
     # Register function for function calls
-    llm.register_function("get_astrology_guidance", get_astrology_guidance)
+    llm.register_function("get_balance", get_balance_from_api)
 
     # Set up conversation context
     context = OpenAILLMContext(

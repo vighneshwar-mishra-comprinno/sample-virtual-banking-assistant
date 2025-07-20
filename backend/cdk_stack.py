@@ -43,8 +43,6 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
     aws_certificatemanager as acm,
-    aws_route53 as route53,
-    aws_route53_targets as targets,
     RemovalPolicy
 )
 from aws_cdk.aws_apigatewayv2 import CfnIntegration, CfnRoute
@@ -86,11 +84,11 @@ class CdkStack(Stack):
             vpc=vpc,
         )
 
-        # Build and push Docker image to ECR for Claude-based AI Astrologer
+        # Build and push Docker image to ECR
         docker_image = ecr_assets.DockerImageAsset(self, "VirtualBankingAssistantImage",
             directory=".",
-            file="Dockerfile_claude",
-            platform=ecr_assets.Platform.LINUX_AMD64
+            file="Dockerfile",
+            platform=ecr_assets.Platform.LINUX_AMD64  # Specify x86_64 architecture for Fargate
         )
 
         # Create Task Role with required permissions
@@ -104,44 +102,14 @@ class CdkStack(Stack):
             iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonECSTaskExecutionRolePolicy")
         )
 
-        # Add Bedrock permissions for Claude 3 Sonnet and Nova Sonic
+        # Add Bedrock permissions
         task_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
-                    "bedrock:InvokeModel",
-                    "bedrock-agent-runtime:RetrieveAndGenerate",
-                    "bedrock-agent-runtime:Retrieve"
+                    "bedrock:InvokeModel"
                 ],
-                resources=[
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0",
-                    "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-sonic-v1:0",
-                    f"arn:aws:bedrock:us-east-1:{self.account}:knowledge-base/G7IBKVWH1Q"
-                ]
-            )
-        )
-
-        # Add OpenSearch Serverless permissions for knowledge base
-        task_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "aoss:APIAccessAll"
-                ],
-                resources=[
-                    f"arn:aws:aoss:us-east-1:{self.account}:collection/*"
-                ]
-            )
-        )
-        
-        # Add Polly permissions for text-to-speech
-        task_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "polly:SynthesizeSpeech"
-                ],
-                resources=["*"]
+                resources=["arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-sonic-v1:0"]
             )
         )
 
@@ -163,10 +131,6 @@ class CdkStack(Stack):
             execution_role=task_role,
             cpu=2048,
             memory_limit_mib=4096,
-            runtime_platform=ecs.RuntimePlatform(
-                cpu_architecture=ecs.CpuArchitecture.X86_64,
-                operating_system_family=ecs.OperatingSystemFamily.LINUX
-            )
         )
         container = task_def.add_container("VirtualBankingAssistantContainer",
             image=ecs.ContainerImage.from_docker_image_asset(docker_image),
@@ -314,7 +278,7 @@ class CdkStack(Stack):
             enforce_ssl=True
         )
 
-        # Create CloudFront distribution for frontend hosting
+        # Create CloudFront distribution
         distribution = cloudfront.Distribution(self, "VirtualBankingAssistantDistribution",
             comment="Virtual Banking Assistant Frontend",
             default_behavior=cloudfront.BehaviorOptions(
@@ -323,6 +287,7 @@ class CdkStack(Stack):
                 cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED
             ),
             default_root_object='index.html',
+            minimum_protocol_version=cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
             error_responses=[
                 cloudfront.ErrorResponse(
                     http_status=403,
@@ -341,9 +306,9 @@ class CdkStack(Stack):
         CfnOutput(self, "UserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "UserPoolClientId", value=user_pool_client.user_pool_client_id)
         CfnOutput(self, "IdentityPoolId", value=identity_pool.ref)
-        CfnOutput(self, "WebsiteBucket", value=website_bucket.bucket_name)
         CfnOutput(self, "CloudFrontURL", value=f"https://{distribution.distribution_domain_name}")
-        CfnOutput(self, "LoadBalancerDNS", value=nlb.load_balancer_dns_name)
+        CfnOutput(self, "NLBEndpoint", value=f"https://{nlb.load_balancer_dns_name}")
+        CfnOutput(self, "FrontendBucket", value=website_bucket.bucket_name)
 
         # cdk-nag suppressions.
         cdk_nag.NagSuppressions.add_resource_suppressions_by_path(self, 
