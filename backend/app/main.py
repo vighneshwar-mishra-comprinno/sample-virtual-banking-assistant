@@ -94,50 +94,80 @@ def update_dredentials():
     except Exception as e:
         print(f"Error refreshing credentials: {str(e)}", flush=True)
 
-async def get_balance_from_api(params: FunctionCallParams):
-    if params.arguments["username"] == 'suresh':
-        if params.arguments["secret_passcode"].lower() == 'nova sonic is awesome' or params.arguments["secret_passcode"].lower() == 'novasonic is awesome':
-            await params.result_callback(
-                {
-                    "balance": 5000 if params.arguments["account_type"] == 'savings' else 14000
-                }
-            )
-        else:
-            print('INCORRECT PASSCODE !')
-            await params.result_callback(
-                {
-                    "message": "Incorrect passcode."
-                }
-            )
-    else:
-        await params.result_callback(
-            {
-                "message": "No such user found."
-            }
+async def get_astrology_reading(params: FunctionCallParams):
+    """
+    Provide astrological analysis using Claude 4 based on birth information
+    """
+    try:
+        from astrology_analysis import astrology_analyzer
+        
+        birth_date = params.arguments.get("birth_date", "")
+        birth_time = params.arguments.get("birth_time", "")
+        birth_place = params.arguments.get("birth_place", "")
+        question_type = params.arguments.get("question_type", "money")
+        specific_question = params.arguments.get("specific_question", "")
+        
+        # Validate birth information
+        is_valid, error_msg = astrology_analyzer.validate_birth_info(birth_date, birth_time, birth_place)
+        
+        if not is_valid:
+            await params.result_callback({
+                "message": error_msg
+            })
+            return
+        
+        # Get astrological analysis from Claude 4
+        analysis = astrology_analyzer.analyze_birth_chart(
+            birth_date=birth_date,
+            birth_time=birth_time,
+            birth_place=birth_place,
+            question_type=question_type,
+            specific_question=specific_question
         )
+        
+        await params.result_callback({
+            "analysis": analysis,
+            "birth_info": f"Born {birth_date} at {birth_time} in {birth_place}",
+            "focus": question_type
+        })
+        
+    except Exception as e:
+        print(f"Error in astrology reading: {str(e)}", flush=True)
+        await params.result_callback({
+            "message": "I'm having trouble accessing the cosmic insights right now. Please try again."
+        })
 
-weather_function = FunctionSchema(
-    name="get_balance",
-    description="Get an account balance.",
+astrology_function = FunctionSchema(
+    name="get_astrology_reading",
+    description="Get comprehensive astrological analysis for money or health guidance based on birth chart information using traditional astrological principles and calculations.",
     properties={
-        "username": {
+        "birth_date": {
             "type": "string",
-            "description": "The username for which the account balance is to be fetched.",
+            "description": "Date of birth in DD/MM/YYYY format (e.g., 15/03/1990).",
         },
-        "secret_passcode": {
-            "type": "string",
-            "description": "A sentence to be used as the secret passcode to access the account details.",
+        "birth_time": {
+            "type": "string", 
+            "description": "Time of birth in HH:MM AM/PM format (e.g., 2:30 PM).",
         },
-        "account_type": {
+        "birth_place": {
             "type": "string",
-            "description": "The type of the account. Either savings or fixed deposit.",
+            "description": "Place of birth as City, Country (e.g., New York, USA).",
+        },
+        "question_type": {
+            "type": "string",
+            "description": "Type of astrological guidance needed: either 'money' for financial matters or 'health' for wellness guidance.",
+            "enum": ["money", "health"]
+        },
+        "specific_question": {
+            "type": "string",
+            "description": "Optional: Specific question about money or health matters for detailed analysis.",
         }
     },
-    required=["username", "account_type"],
+    required=["birth_date", "birth_time", "birth_place", "question_type"],
 )
 
 # Create tools schema
-tools = ToolsSchema(standard_tools=[weather_function])
+tools = ToolsSchema(standard_tools=[astrology_function])
 
 async def setup(websocket: WebSocket):
     """
@@ -184,7 +214,7 @@ async def setup(websocket: WebSocket):
     )
 
     # Register function for function calls
-    llm.register_function("get_balance", get_balance_from_api)
+    llm.register_function("get_astrology_reading", get_astrology_reading)
 
     # Set up conversation context
     context = OpenAILLMContext(

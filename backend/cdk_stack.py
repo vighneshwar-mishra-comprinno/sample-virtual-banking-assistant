@@ -109,7 +109,10 @@ class CdkStack(Stack):
                 actions=[
                     "bedrock:InvokeModel"
                 ],
-                resources=["arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-sonic-v1:0"]
+                resources=[
+                    "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-sonic-v1:0",
+                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
+                ]
             )
         )
 
@@ -134,7 +137,11 @@ class CdkStack(Stack):
         )
         container = task_def.add_container("VirtualBankingAssistantContainer",
             image=ecs.ContainerImage.from_docker_image_asset(docker_image),
-            logging=ecs.LogDriver.aws_logs(stream_prefix="VirtualBankingAssistant")
+            logging=ecs.LogDriver.aws_logs(stream_prefix="VirtualBankingAssistant"),
+            environment={
+                "KNOWLEDGE_BASE_ENABLED": "true",
+                "DEPLOYMENT_VERSION": "v2.0"  # Force new deployment
+            }
         )
         container.add_port_mappings(ecs.PortMapping(container_port=container_port, protocol=ecs.Protocol.TCP))
 
@@ -367,6 +374,16 @@ class CdkStack(Stack):
                 {
                     'id': 'AwsSolutions-S1',
                     'reason': 'S3 access logging wont be used for sample code.'
+                }
+            ]
+        )
+
+        cdk_nag.NagSuppressions.add_resource_suppressions_by_path(self, 
+            f'/{self.stack_name}/VirtualBankingAssistantTaskDef/Resource',
+            [
+                {
+                    'id': 'AwsSolutions-ECS2',
+                    'reason': 'Environment variables are used for non-sensitive configuration only'
                 }
             ]
         )
